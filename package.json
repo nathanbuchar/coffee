@@ -1,0 +1,34 @@
+{
+  "name": "coffee",
+  "version": "1.0.0",
+  "description": "Prevents macOS from sleeping.",
+  "author": "Nathan Buchar <hello@nathanbuchar.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dist": "export CSC_NAME=CAN92U6WU7 && build",
+    "pack": "export CSC_NAME=CAN92U6WU7 && build --dir",
+    "setup": "npm install --verbose && npm run setup:app",
+    "setup:app": "(cd app && npm run setup)",
+    "start": "(cd app && npm start)"
+  },
+  "devDependencies": {
+    "electron": "^1.6.11",
+    "electron-builder": "^19.13.0",
+    "eslint": "^4.1.1",
+    "eslint-config-airbnb-base": "^11.2.0",
+    "eslint-plugin-import": "^2.7.0"
+  },
+  "build": {
+    "appId": "com.coffeee.app",
+    "copyright": "Copyright 2017 Nathan Buchar <hello@nathanbuchar.com> (nathanbuchar.com)",
+    "productName": "Coffee",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "extendInfo": {
+        "LSBackgroundOnly": 1,
+        "LSUIElement": 1
+      }
+    }
+  }
+}

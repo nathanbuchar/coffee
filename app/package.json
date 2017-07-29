@@ -1,0 +1,19 @@
+{
+  "name": "Coffee",
+  "version": "1.0.0",
+  "description": "Prevents macOS from sleeping.",
+  "author": "Nathan Buchar <hello@nathanbuchar.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "setup": "npm install --verbose",
+    "start": "DEBUG=coffee:* electron ."
+  },
+  "devDependencies": {
+    "electron": "^1.6.11"
+  },
+  "dependencies": {
+    "debug": "^2.6.8"
+  }
+}
