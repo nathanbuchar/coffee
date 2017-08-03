@@ -1,87 +1,89 @@
 const { Menu, Tray, app, powerSaveBlocker } = require('electron');
-const debug = require('debug')('coffee:app');
-const path = require('path');
+const { argv } = require('yargs');
 
-class App {
+const settings = require('./settings');
+
+function App() {
 
   /**
-   * Creates a new App instance.
+   * A reference to the Tray instance.
    *
-   * @constructor
+   * @type {Tray}
+   * @private
    */
-  constructor() {
-
-    /**
-     * A reference to the Tray instance.
-     *
-     * @type {Tray}
-     * @private
-     */
-    this._tray = null;
-
-    /**
-     * The blocker ID that is assigned to this power blocker,
-     * if it is running.
-     *
-     * @default null
-     * @type {string|null}
-     * @private
-     */
-    this._powerSaveBlockerId = null;
-
-    this._init();
-  }
+  let tray;
 
   /**
+   * The blocker ID that is assigned to the power blocker,
+   * if it is running.
    *
+   * @type {?number}
+   * @private
+   */
+  let powerSaveBlockerId;
+
+  /**
+   * Initializes the App instance.
    *
    * @private
    */
-  _init() {
-    debug('initializing...');
-
-    this._initDock();
-    this._initTray();
+  function init() {
+    setupDock();
+    setupTray();
   }
 
   /**
-   * Initializes the dock.
+   * Sets up the dock icon.
    *
    * @private
    */
-  _initDock() {
-    debug('initializing dock...');
+  function setupDock() {
+    app.dock.setIcon(settings.Icons.DOCK);
 
-    app.dock.hide();
+    if (!argv.debug) {
+      app.dock.hide();
+    }
   }
 
   /**
-   * Initializes the Tray instance.
+   * Sets up the tray.
    *
    * @private
    */
-  _initTray() {
-    debug('initializing tray...');
+  function setupTray() {
+    const icon = getTrayIcon();
 
-    this._tray = new Tray(App.Icons.DISABLED);
+    tray = new Tray(icon);
 
-    this._updateTray();
+    updateTray();
   }
 
   /**
-   * Builds the app's Tray's menu.
+   * Gets the path to the appropriate tray icon.
+   *
+   * @returns {string}
+   * @private
+   */
+  function getTrayIcon() {
+    return powerSaveBlockerId === undefined ?
+      settings.Icons.DISABLED :
+      settings.Icons.ENABLED;
+  }
+
+  /**
+   * Builds the tray menu.
    *
    * @returns {Menu}
    * @private
    */
-  _buildMenu() {
-    debug('building menu...');
-
+  function buildMenu() {
     return Menu.buildFromTemplate([
       {
-        label: (this._powerSaveBlockerId !== null ? 'Deactivate' : 'Activate'),
-        click: () => {
-          this._toggle();
+        label: powerSaveBlockerId !== undefined ?
+          'Deactivate' :
+          'Activate',
+        click() {
+          toggle();
         }
       },
       {
@@ -91,7 +93,7 @@ class App {
         label: 'Open at Login',
         type: 'checkbox',
         checked: app.getLoginItemSettings().openAtLogin,
-        click: menuItem => {
+        click(menuItem) {
           app.setLoginItemSettings({
             openAtLogin: menuItem.checked
           });
@@ -99,33 +101,25 @@ class App {
       },
       {
         label: 'Quit',
-        click: () => {
-          this._quit();
+        click() {
+          app.quit();
         }
       }
     ]);
   }
 
   /**
-   * Updates the Tray.
+   * Updates the tray.
    *
    * @private
    */
-  _updateTray() {
-    debug('updating tray...');
+  function updateTray() {
+    const icon = getTrayIcon();
+    const menu = buildMenu();
 
-    const menu = this._buildMenu();
-
-    if (this._powerSaveBlockerId !== null) {
-      this._tray.setImage(App.Icons.ENABLED);
-      this._tray.setPressedImage(App.Icons.ENABLED_PRESSED);
-    } else {
-      this._tray.setImage(App.Icons.DISABLED);
-      this._tray.setPressedImage(App.Icons.DISABLED_PRESSED);
-    }
-
-    this._tray.setContextMenu(menu);
-    this._tray.setToolTip(`Coffee v${app.getVersion()}\nBy Nathan Buchar`);
+    tray.setImage(icon);
+    tray.setContextMenu(menu);
+    tray.setToolTip(`Coffee v${app.getVersion()}\nBy Nathan Buchar`);
   }
 
   /**
@@ -133,72 +127,22 @@ class App {
    *
    * @private
    */
-  _toggle() {
-    if (this._powerSaveBlockerId !== null) {
-      this._deactivate();
+  function toggle() {
+    if (powerSaveBlockerId === undefined) {
+      powerSaveBlockerId = powerSaveBlocker.start('prevent-display-sleep');
     } else {
-      this._activate();
+      powerSaveBlocker.stop(powerSaveBlockerId);
+
+      // Ensure that the powerSaveBlocker has been stopped.
+      if (!powerSaveBlocker.isStarted(powerSaveBlockerId)) {
+        powerSaveBlockerId = undefined;
+      }
     }
+
+    updateTray();
   }
 
-  /**
-   * Activates coffee.
-   *
-   * @private
-   */
-  _activate() {
-    debug('activating coffee...');
-
-    this._powerSaveBlockerId = powerSaveBlocker.start('prevent-display-sleep');
-
-    this._updateTray();
-  }
-
-  /**
-   * Deactivates coffee.
-   *
-   * @private
-   */
-  _deactivate() {
-    debug('deactivating coffee...');
-
-    powerSaveBlocker.stop(this._powerSaveBlockerId);
-    this._powerSaveBlockerId = null;
-
-    this._updateTray();
-  }
-
-  /**
-   * Quits the app.
-   *
-   * @public
-   */
-  _quit() {
-    debug('quitting app...');
-
-    app.quit();
-  }
+  init();
 }
 
-/**
- * AppTray icon paths.
- *
- * @enum {string}
- * @static
- */
-App.Icons = {
-  DISABLED:
-    path.join(
-      __dirname, '../resources/osx/Coffee-Disabled-Template.png'),
-  DISABLED_PRESSED:
-    path.join(
-      __dirname, '../resources/osx/Coffee-Disabled-Pressed-Template.png'),
-  ENABLED:
-    path.join(
-      __dirname, '../resources/osx/Coffee-Enabled-Template.png'),
-  ENABLED_PRESSED:
-    path.join(
-      __dirname, '../resources/osx/Coffee-Enabled-Pressed-Template.png')
-};
-
-module.exports = new App();
+module.exports = App;
