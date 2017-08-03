@@ -1,8 +1,8 @@
-# Airplane
+# Coffee
 
-An airplane mode applet for your Mac.
+An applet that prevents macOS from sleeping.
 
-![screenshot-1](https://raw.githubusercontent.com/nathanbuchar/airplane/master/docs/screenshot-1.png)
+![screenshot-1](https://raw.githubusercontent.com/nathanbuchar/coffee/master/docs/screenshot-1.png)
 
 ## License
 
@@ -11,4 +11,4 @@ Copyright &copy; 2017 [Nathan Buchar](mailto:hello@nathanbuchar.com). All Rights
 </br>
 </br>
 
-:airplane:
+:coffee:
